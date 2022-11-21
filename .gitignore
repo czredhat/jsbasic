@@ -1,0 +1,22 @@
+/.git/
+/.idea/
+/node_modules/
+/nbproject/
+/tmp
+
+# Mac OS files
+**/.DS_Store
+
+# Eclipse
+/.project
+/.settings
+.env
+.env.testing
+.env.local
+npm-debug.log
+dump.rdb
+/.scannerwork
+/*.heapsnapshot
+
+# VS Code
+.vscode
