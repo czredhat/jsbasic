@@ -2,7 +2,7 @@ let resultOperations = [];
 
 function humanReadableExprFromArray(expr, start, end) {
     let real = '';
-    for (let i = start; i < end; i ++) {
+    for (let i = start; i < end; i++) {
         real += ' ' + expr[i] + ' ';
     }
     return real;
@@ -44,27 +44,46 @@ function evalOperand(operand, p1, p2, pos) {
     throw new Error(`EvalOperandError: unknown operand ${operand} at ${pos}`);
 }
 
+function evalUnary(operand, p) {
+    switch (operand) {
+        case '+':
+            return p;
+        case '-':
+            return -p;
+    }
+    throw new Error(`EvalOperandError: unknown unary operand ${operand} at ${pos}`);
+}
+
 function myeval(e, start, end) {
 
     //debug
-    //console.log('eval ', start, end, ':::', humanReadableExprFromArray(e, start, end));
+    console.log('eval ', start, end, ':::', humanReadableExprFromArray(e, start, end));
+
+    if ((end - start) < 1) {
+        return 0;
+    }
 
     // if it is a single value return it
-    if ((end-start) <= 1) {
+    if ((end - start) <= 1) {
         resultOperations.push(e[start]);
         return e[start];
     }
 
+    if (isOperator(e[start]) && (end - start) == 2) {
+        resultOperations.push(e[start] + '!');
+        return evalUnary(e[start], myeval(e, start + 1, end));
+    }
+
     // if the whole expression is in brackets remove them
-    if (e[start] === '(' && e[end -1] === ')') {
+    if (e[start] === '(' && e[end - 1] === ')') {
         let open = false;
         let opened = 0;
-        for (let i = start + 1; i < end - 1; i ++) {
+        for (let i = start + 1; i < end - 1; i++) {
             if (e[i] === '(') {
-                opened ++;
+                opened++;
             }
             if (e[i] === ')') {
-                opened --;
+                opened--;
             }
             if (opened < 0) {
                 open = true;
@@ -73,7 +92,7 @@ function myeval(e, start, end) {
         }
 
         if (open === false) {
-            return myeval(e, start + 1, end -1);
+            return myeval(e, start + 1, end - 1);
         }
     }
 
@@ -83,16 +102,16 @@ function myeval(e, start, end) {
 
     let openedBrackets = 0;
 
-    for (let i = start; i < end; i ++) {
+    for (let i = start; i < end; i++) {
         if (e[i] === '(') {
             if (maxOperatorPosition >= 0) {
                 break;
             }
-            openedBrackets ++;
+            openedBrackets++;
         }
 
         if (e[i] === ')') {
-            openedBrackets --;
+            openedBrackets--;
         }
 
         if (openedBrackets > 0) {
@@ -102,8 +121,13 @@ function myeval(e, start, end) {
         let type = typeof e[i];
         if (type === 'string') {
             if (isOperator(e[i])) {
+
+                if (i > start && isOperator(e[i - 1])) {
+                    continue;
+                }
+
                 let priority = operatorPriority(e[i]);
-                if (priority > maxOperatorPriority) {
+                if (priority >= maxOperatorPriority) {
                     maxOperatorPosition = i;
                     maxOperatorPriority = priority;
                 }
@@ -115,12 +139,11 @@ function myeval(e, start, end) {
     resultOperations.push(e[maxOperatorPosition]);
 
 
-
     return evalOperand(e[maxOperatorPosition], myeval(e, start, maxOperatorPosition), myeval(e, maxOperatorPosition + 1, end), maxOperatorPosition);
 }
 
 try {
-    let expr = [1, '+', '(', '(', 2, '+', 3, ')', '*', 4, '+', 1, ')', '-', 2, '*', '(', 3, '+', 1, ')'];
+    let expr = [2,'+', 1];
 
     console.log('expression:', humanReadableExprFromArray(expr, 0, expr.length));
     console.log('real true value:', eval(humanReadableExprFromArray(expr, 0, expr.length)));
@@ -132,7 +155,7 @@ try {
         str += resultOperations[i] + ' ';
     }
     console.log(str);
-} catch(err) {
+} catch (err) {
     console.log('ERROR', err.message);
     console.log('-----------');
     console.log('operations:');
