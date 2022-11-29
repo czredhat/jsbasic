@@ -8,6 +8,24 @@ function humanReadableExprFromArray(expr, start, end) {
     return real;
 }
 
+function isFunction(str) {
+    switch (str) {
+        case 'pow(':
+            return true;
+        case 'sin(':
+            return true;
+    }
+    return false;
+}
+
+function pow(n) {
+    return n * n;
+}
+
+function sin(n) {
+    return Math.sin(n);
+}
+
 function isOperator(str) {
     switch (str) {
         case '+':
@@ -15,6 +33,10 @@ function isOperator(str) {
         case '-':
             return true;
         case '*':
+            return true;
+        case '/':
+            return true;
+        case '&':
             return true;
     }
     return false;
@@ -28,6 +50,10 @@ function operatorPriority(str) {
             return 2;
         case '*':
             return 1;
+        case '/':
+            return 0;
+        case '&':
+            return 4;
     }
     return false;
 }
@@ -40,6 +66,10 @@ function evalOperand(operand, p1, p2, pos) {
             return p1 - p2;
         case '*':
             return p1 * p2;
+        case '/':
+            return p1 / p2;
+        case '&':
+            return p1 & p2;
     }
     throw new Error(`EvalOperandError: unknown operand ${operand} at ${pos}`);
 }
@@ -52,6 +82,19 @@ function evalUnary(operand, p) {
             return -p;
     }
     throw new Error(`EvalOperandError: unknown unary operand ${operand} at ${pos}`);
+}
+
+function evalFunction(e, start, end) {
+    switch (e[start]) {
+        case 'pow(':
+            resultOperations.push(`pow`);
+            return pow(myeval(e, start + 1, end - 1));
+        case 'sin(':
+            resultOperations.push(`sin`);
+            return sin(myeval(e, start + 1, end - 1));
+    }
+    throw new Error(`EvalFunctionError: unknown function ${e[start]}`);
+
 }
 
 function myeval(e, start, end) {
@@ -75,11 +118,11 @@ function myeval(e, start, end) {
     }
 
     // if the whole expression is in brackets remove them
-    if (e[start] === '(' && e[end - 1] === ')') {
+    if ((e[start] === '(' || isFunction(e[start])) && e[end - 1] === ')') {
         let open = false;
         let opened = 0;
         for (let i = start + 1; i < end - 1; i++) {
-            if (e[i] === '(') {
+            if (e[i] === '(' || isFunction(e[i])) {
                 opened++;
             }
             if (e[i] === ')') {
@@ -92,7 +135,11 @@ function myeval(e, start, end) {
         }
 
         if (open === false) {
-            return myeval(e, start + 1, end - 1);
+            if (isFunction(e[start])) {
+                return evalFunction(e, start, end);
+            } else {
+                return myeval(e, start + 1, end - 1);
+            }
         }
     }
 
@@ -103,7 +150,7 @@ function myeval(e, start, end) {
     let openedBrackets = 0;
 
     for (let i = start; i < end; i++) {
-        if (e[i] === '(') {
+        if (e[i] === '(' || isFunction(e[i])) {
             if (maxOperatorPosition >= 0) {
                 break;
             }
@@ -142,11 +189,14 @@ function myeval(e, start, end) {
     return evalOperand(e[maxOperatorPosition], myeval(e, start, maxOperatorPosition), myeval(e, maxOperatorPosition + 1, end), maxOperatorPosition);
 }
 
+
+
 try {
-    let expr = [2,'+', 1];
+    let expr = ['pow(', '(', 1, '+', 'sin(', 1, '+', 2, ')', ')', '*', 2, ')'];
 
     console.log('expression:', humanReadableExprFromArray(expr, 0, expr.length));
     console.log('real true value:', eval(humanReadableExprFromArray(expr, 0, expr.length)));
+
     console.log('evaluated: ', myeval(expr, 0, expr.length));
     console.log('--- operations to solve the expression:');
 
